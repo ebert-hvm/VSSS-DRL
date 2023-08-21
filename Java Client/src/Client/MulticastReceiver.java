@@ -26,8 +26,8 @@ public class MulticastReceiver {
     public void receiveFrame() {
         try {
             byte[] receiveData = new byte[2048];
-            InetAddress multicastAddress = InetAddress.getByName("224.5.23.2");
-            int port = 10020;
+            InetAddress multicastAddress = InetAddress.getByName("224.0.0.1");
+            int port = 10002;
 
             MulticastSocket socket = new MulticastSocket(new InetSocketAddress(port));
 
