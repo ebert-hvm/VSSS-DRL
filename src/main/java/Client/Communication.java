@@ -40,6 +40,10 @@ public class Communication {
         replace = new SharedObject<>(false);
     }
 
+    public boolean getRx() {
+        return rx.Get();
+    }
+
     private void receiveFrame() {
         try {
             byte[] receiveData = new byte[2048];
@@ -117,7 +121,11 @@ public class Communication {
                 byte[] actualMessage = new byte[length];
                 System.arraycopy(message, 0, actualMessage, 0, length);
                 Environment env = Environment.parseFrom(actualMessage);
-                environment.Set(env);
+                if (env != null)
+                    environment.Set(env);
+                else {
+                    System.out.println("env is null");
+                }
             } catch (Exception ex) {
                 // System.out.println(ex);
             }
@@ -129,51 +137,66 @@ public class Communication {
         while (true) {
             try {
                 Thread.sleep(80);
-                Main.clearTerminal();
             } catch (Exception e) {
             }
             Environment env = environment.Get();
             if (rx.Get() && env != null) {
-                System.out.println("Field:");
-                System.out.println(
-                        "Length: " + env.getField().getLength() +
-                                "; Width: " + env.getField().getWidth());
-                System.out.println(
-                        "GoalDepth: " + env.getField().getGoalDepth() +
-                                "; GoalWidth: " + env.getField().getGoalWidth());
-                System.out.println("Ball:");
-                System.out.println(
-                        "x: " + env.getFrame().getBall().getX() +
-                                "; y: " + env.getFrame().getBall().getY());
-                System.out.println("Blue Robots:");
-                for (Protobuf.Robot robot : env.getFrame().getRobotsBlueList()) {
-                    System.out.println(
-                            "id: " + robot.getRobotId() +
-                                    "; x: " + robot.getX() +
-                                    "; y: " + robot.getY() +
-                                    "; vx: " + Main.round(robot.getVx(), 4) +
-                                    "; vy: " + Main.round(robot.getVy(), 4));
-                }
-                System.out.println("Yellow Robots:");
-                for (Protobuf.Robot robot : env.getFrame().getRobotsYellowList()) {
-                    System.out.println(
-                            "id: " + robot.getRobotId() +
-                                    "; x: " + robot.getX() +
-                                    "; y: " + robot.getY() +
-                                    "; vx: " + Main.round(robot.getVx(), 4) +
-                                    "; vy: " + Main.round(robot.getVy(), 4));
-                }
+                // System.out.println("rx");
+                // Main.clearTerminal();
+                // System.out.println("Field:");
+                // System.out.println(
+                // "Length: " + env.getField().getLength() +
+                // "; Width: " + env.getField().getWidth());
+                // System.out.println(
+                // "GoalDepth: " + env.getField().getGoalDepth() +
+                // "; GoalWidth: " + env.getField().getGoalWidth());
+                // System.out.println("Ball:");
+                // double vx = Main.round(env.getFrame().getBall().getVx(), 4),
+                // vy = Main.round(env.getFrame().getBall().getVx(), 4), vnorm = Math.sqrt(vx *
+                // vx + vy * vy);
+                // System.out.println(
+                // "x: " + Main.round(env.getFrame().getBall().getX(), 4) +
+                // "; y: " + Main.round(env.getFrame().getBall().getY(), 4) +
+                // "; vX: " + vx +
+                // "; vY: " + vy +
+                // "; |v|: " + vnorm);
+                // System.out.println("Blue Robots:");
+                // for (Protobuf.Robot robot : env.getFrame().getRobotsBlueList()) {
+                // System.out.println(
+                // "id: " + robot.getRobotId() +
+                // "; x: " + Main.round(robot.getX(), 4) +
+                // "; y: " + Main.round(robot.getY(), 4) +
+                // "; vx: " + Main.round(robot.getVx(), 4) +
+                // "; vy: " + Main.round(robot.getVy(), 4));
+                // }
+                // System.out.println("Yellow Robots:");
+                // for (Protobuf.Robot robot : env.getFrame().getRobotsYellowList()) {
+                // System.out.println(
+                // "id: " + robot.getRobotId() +
+                // "; x: " + Main.round(robot.getX(), 4) +
+                // "; y: " + Main.round(robot.getY(), 4) +
+                // "; vx: " + Main.round(robot.getVx(), 4) +
+                // "; vy: " + Main.round(robot.getVy(), 4));
+                // }
             }
         }
     }
 
     private void sendPackage() {
-        String ipAddress = "172.22.202.57";
+        String ipAddress = Main.parameters.get("address").asText();
         int port = 20011;
         while (true) {
+            try {
+                Thread.sleep(14);
+            } catch (Exception ex) {
+            }
             byte[] packetArray = this.packet.Get();
             if (packetArray.length == 0)
                 continue;
+            // for (int i = 0; i < packetArray.length; i++) {
+            // System.out.print(String.format("%02x", packetArray[i]));
+            // }
+            // System.out.print('\n');
             try (DatagramSocket socket = new DatagramSocket()) {
                 InetAddress address = InetAddress.getByName(ipAddress);
                 DatagramPacket packet = new DatagramPacket(packetArray, packetArray.length, address, port);
@@ -221,6 +244,7 @@ public class Communication {
                 ArrayList<Protobuf.Command> commandsArray = this.commands.Get();
                 if (commandsArray == null)
                     continue;
+                // System.out.println(commandsArray.get(0).getWheelLeft());
                 for (Protobuf.Command command : commandsArray) {
                     commandsBuilder.addRobotCommands(command);
                 }
