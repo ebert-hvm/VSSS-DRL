@@ -43,8 +43,8 @@ public class Navigation {
         // // System.out.println(environmentState.blueRobots[0].angle.Get());
         // double calc = anglePid.calculate(destiny[2] - 180 / Math.PI *
         // environmentState.blueRobots[0].angle.Get());
-        command[0] = 50;
-        command[1] = 50;
+        command[0] = 40;
+        command[1] = 40;
         // if (calc < 0) {
         // command[0] *= -1;
         // command[1] *= -1;
