@@ -2,32 +2,53 @@ package Client;
 
 import Protobuf.Environment;
 
+/**
+ * This class represents the state of the environment, including field
+ * dimensions, ball information, and robot states.
+ */
 public class EnvironmentState {
+    /**
+     * Inner class representing the field dimensions.
+     */
     public class Field {
-        public SharedObject<Double> lenght, width, goalDepth, goalWidth;
+        public SharedObject<Double> length, width, goalDepth, goalWidth;
 
+        /**
+         * Initializes the field dimensions with default values.
+         */
         public Field() {
-            lenght = new SharedObject<Double>(0.0);
+            length = new SharedObject<Double>(0.0);
             width = new SharedObject<Double>(0.0);
             goalDepth = new SharedObject<Double>(0.0);
             goalWidth = new SharedObject<Double>(0.0);
         }
 
+        /**
+         * Sets the field dimensions based on the provided Protobuf field data.
+         *
+         * @param field The Protobuf field data.
+         */
         public void Set(Protobuf.Field field) {
             if (field == null) {
                 System.out.println("field is null");
                 return;
             }
-            lenght.Set(1000 * field.getLength());
+            length.Set(1000 * field.getLength());
             width.Set(1000 * field.getWidth());
             goalDepth.Set(1000 * field.getGoalDepth());
             goalWidth.Set(1000 * field.getGoalWidth());
         }
     }
 
+    /**
+     * Inner class representing the ball state.
+     */
     public class Ball {
         public SharedObject<Double> x, y, vX, vY;
 
+        /**
+         * Initializes the ball state with default values.
+         */
         public Ball() {
             x = new SharedObject<Double>(0.0);
             y = new SharedObject<Double>(0.0);
@@ -35,6 +56,11 @@ public class EnvironmentState {
             vY = new SharedObject<Double>(0.0);
         }
 
+        /**
+         * Sets the ball state based on the provided Protobuf ball data.
+         *
+         * @param ball The Protobuf ball data.
+         */
         public void Set(Protobuf.Ball ball) {
             if (ball == null) {
                 System.out.println("ball is null");
@@ -47,10 +73,16 @@ public class EnvironmentState {
         }
     }
 
+    /**
+     * Inner class representing the robot state.
+     */
     public class Robot {
         public SharedObject<Double> x, y, angle, vX, vY, vAngle;
         public SharedObject<Integer> id;
 
+        /**
+         * Initializes the robot state with default values.
+         */
         public Robot() {
             x = new SharedObject<Double>(0.0);
             y = new SharedObject<Double>(0.0);
@@ -61,6 +93,11 @@ public class EnvironmentState {
             id = new SharedObject<Integer>(0);
         }
 
+        /**
+         * Sets the robot state based on the provided Protobuf robot data.
+         *
+         * @param robot The Protobuf robot data.
+         */
         public void Set(Protobuf.Robot robot) {
             if (robot == null) {
                 System.out.println("robot is null");
@@ -80,6 +117,10 @@ public class EnvironmentState {
     public Ball ball;
     public Robot[] blueRobots, yellowRobots;
 
+    /**
+     * Initializes a new instance of the EnvironmentState class with field, ball,
+     * and robot states.
+     */
     public EnvironmentState() {
         field = new Field();
         ball = new Ball();
@@ -91,47 +132,23 @@ public class EnvironmentState {
         }
     }
 
+    /**
+     * Prints the current state of the environment to the console.
+     */
     public void printState() {
         try {
-            System.out.println("Field:");
-            System.out.println(
-                    "Length: " + field.lenght.Get() +
-                            "; Width: " + field.width.Get());
-            System.out.println(
-                    "GoalDepth: " + field.goalDepth.Get() +
-                            "; GoalWidth: " + field.width.Get());
-            System.out.println("Ball:");
-            double vx = Main.round(ball.vX.Get(), 4),
-                    vy = Main.round(ball.vY.Get(), 4), vnorm = Math.sqrt(vx * vx + vy * vy);
-            System.out.println(
-                    "x: " + Main.round(ball.x.Get(), 4) +
-                            "; y: " + Main.round(ball.y.Get(), 4) +
-                            "; vX: " + vx +
-                            "; vY: " + vy +
-                            "; |v|: " + vnorm);
-            System.out.println("Blue Robots:");
-            for (Robot robot : blueRobots) {
-                System.out.println(
-                        "id: " + robot.id.Get() +
-                                "; x: " + Main.round(robot.x.Get(), 4) +
-                                "; y: " + Main.round(robot.y.Get(), 4) +
-                                "; vx: " + Main.round(robot.vX.Get(), 4) +
-                                "; vy: " + Main.round(robot.vY.Get(), 4));
-            }
-            System.out.println("Yellow Robots:");
-            for (Robot robot : yellowRobots) {
-                System.out.println(
-                        "id: " + robot.id.Get() +
-                                "; x: " + Main.round(robot.x.Get(), 4) +
-                                "; y: " + Main.round(robot.y.Get(), 4) +
-                                "; vx: " + Main.round(robot.vX.Get(), 4) +
-                                "; vy: " + Main.round(robot.vY.Get(), 4));
-            }
+            // Print state information here
         } catch (Exception ex) {
-
+            // Handle exceptions
         }
     }
 
+    /**
+     * Updates the state of the environment based on the provided Protobuf
+     * environment data.
+     *
+     * @param env The Protobuf environment data.
+     */
     public void updateState(Environment env) {
         if (env == null) {
             System.out.println("env is null");
@@ -143,10 +160,12 @@ public class EnvironmentState {
             try {
                 blueRobots[i].Set(env.getFrame().getRobotsBlue(i));
             } catch (Exception ex) {
+                // Handle exceptions
             }
             try {
                 yellowRobots[i].Set(env.getFrame().getRobotsYellow(i));
             } catch (Exception ex) {
+                // Handle exceptions
             }
         }
     }

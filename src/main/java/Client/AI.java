@@ -4,6 +4,12 @@ import java.util.ArrayList;
 
 import Protobuf.Command;
 
+/**
+ * The AI class represents the main Artificial Intelligence module for
+ * controlling blue and yellow robots in a robotic soccer game.
+ * It manages communication, navigation, environment state, and command
+ * execution.
+ */
 public class AI {
     private Communication communication;
     private Navigation navigation;
@@ -11,6 +17,10 @@ public class AI {
     private SharedObject<double[][]> blueVelocity, yellowVelocity;
     private SharedObject<double[][]> blueDestiny, yellowDestiny;
 
+    /**
+     * Initializes a new instance of the AI class. It sets up the necessary
+     * components and shared objects.
+     */
     public AI() {
         this.communication = new Communication();
         this.navigation = new Navigation();
@@ -21,6 +31,9 @@ public class AI {
         yellowDestiny = new SharedObject<double[][]>(new double[3][3]);
     }
 
+    /**
+     * Periodically executes navigation logic to determine blue robot velocities.
+     */
     private void executeNavigation() {
         double[][] blueVelocity = new double[3][2];
         while (true) {
@@ -34,6 +47,10 @@ public class AI {
         }
     }
 
+    /**
+     * Periodically generates and sends commands to the communication module for
+     * both blue and yellow robots.
+     */
     private void executeCommand() {
         long time = System.currentTimeMillis() - 5001;
         boolean replace;
@@ -67,6 +84,10 @@ public class AI {
         }
     }
 
+    /**
+     * Periodically prints the current environment state (if needed) for debugging
+     * purposes.
+     */
     private void printEnvironmentState() {
         while (true) {
             try {
@@ -79,6 +100,10 @@ public class AI {
         }
     }
 
+    /**
+     * Initializes the AI module and periodically updates the blue robot's
+     * destination based on the received environment state.
+     */
     private void startAI() {
         double[][] blueDestiny = new double[3][3];
         while (true) {
@@ -100,6 +125,11 @@ public class AI {
         }
     }
 
+    /**
+     * Starts the AI module by launching multiple threads for various tasks,
+     * including communication, navigation,
+     * command execution, and environment state printing.
+     */
     public void start() {
         Thread[] threads = {
                 new Thread(communication::startReceiving),

@@ -19,6 +19,10 @@ import Protobuf.Replacement;
 import Protobuf.Robot;
 import Protobuf.RobotReplacement;
 
+/**
+ * This class handles communication between the client and the robot soccer
+ * simulation environment.
+ */
 public class Communication {
     public SharedObject<Boolean> rx;
     public SharedObject<byte[]> message;
@@ -29,6 +33,10 @@ public class Communication {
     public SharedObject<Integer> packetLength;
     public SharedObject<Boolean> replace;
 
+    /**
+     * Initializes the Communication class with shared objects for communication
+     * data.
+     */
     Communication() {
         rx = new SharedObject<>(false);
         message = new SharedObject<>(new byte[2048]);
@@ -40,10 +48,20 @@ public class Communication {
         replace = new SharedObject<>(false);
     }
 
+    /**
+     * Gets the status of the reception flag.
+     *
+     * @return True if data has been received, false otherwise.
+     */
     public boolean getRx() {
         return rx.Get();
     }
 
+    /**
+     * Receives frames from the multicast socket, handles reconnection on socket
+     * errors,
+     * and updates the shared communication objects accordingly.
+     */
     private void receiveFrame() {
         try {
             byte[] receiveData = new byte[2048];
@@ -111,6 +129,10 @@ public class Communication {
         }
     }
 
+    /**
+     * Decodes received messages into an Environment object and updates the shared
+     * environment object.
+     */
     private void decodeMessage() {
         while (true) {
             try {
@@ -132,6 +154,11 @@ public class Communication {
         }
     }
 
+    /**
+     * Prints the received frame information periodically.
+     * This method should be running in a separate thread to continuously print the
+     * updated frame information.
+     */
     private void printReceivedFrame() {
 
         while (true) {
@@ -182,6 +209,10 @@ public class Communication {
         }
     }
 
+    /**
+     * Sends packages via UDP to a specified IP address and port.
+     * This method sends the data stored in the shared packet object.
+     */
     private void sendPackage() {
         String ipAddress = Main.parameters.get("address").asText();
         int port = 20011;
@@ -207,6 +238,12 @@ public class Communication {
         }
     }
 
+    /**
+     * Creates a default replacement message for the environment.
+     * This message is used when replacements are needed.
+     *
+     * @return A Replacement message with default robot and ball positions.
+     */
     private Replacement DefaultReplacement() {
         return Replacement.newBuilder()
                 .setBall(BallReplacement.newBuilder().setX(-0.375).setY(0).build())
@@ -237,6 +274,11 @@ public class Communication {
                 .build();
     }
 
+    /**
+     * Encodes commands into a Packet and sends it.
+     * This method constructs a Packet message containing commands and,
+     * if needed, a replacement message, and sends it via UDP.
+     */
     private void encodeMessage() {
         while (true) {
             try {
@@ -264,6 +306,11 @@ public class Communication {
         }
     }
 
+    /**
+     * Starts the receiving threads for handling communication.
+     * This method creates and starts threads for receiving, decoding, and printing
+     * frames.
+     */
     public void startReceiving() {
         Thread receiverThread = new Thread(this::receiveFrame);
         Thread decoderThread = new Thread(this::decodeMessage);
@@ -292,6 +339,10 @@ public class Communication {
         }
     }
 
+    /**
+     * Starts the sending threads for handling communication.
+     * This method creates and starts threads for sending and encoding messages.
+     */
     public void startSending() {
         Thread senderThread = new Thread(this::sendPackage);
         Thread encoderThread = new Thread(this::encodeMessage);

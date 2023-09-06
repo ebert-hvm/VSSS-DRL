@@ -8,22 +8,49 @@ import java.net.URL;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * This class contains utility methods and the main entry point of the client
+ * application.
+ */
 public class Main {
+    /**
+     * Clamps a value between a minimum and a maximum.
+     *
+     * @param value The value to be clamped.
+     * @param min   The minimum value to clamp to.
+     * @param max   The maximum value to clamp to.
+     * @return The clamped value.
+     */
     public static double clamp(double value, double min, double max) {
         return Math.max(min, Math.min(max, value));
     }
 
+    /**
+     * Rounds a double value to a specified number of decimal places.
+     *
+     * @param value  The value to be rounded.
+     * @param places The number of decimal places to round to.
+     * @return The rounded value.
+     * @throws IllegalArgumentException if places is negative.
+     */
     public static double round(double value, int places) {
         if (places < 0)
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Decimal places cannot be negative");
 
         BigDecimal bd = BigDecimal.valueOf(value);
         bd = bd.setScale(places, RoundingMode.HALF_UP);
         return bd.doubleValue();
     }
 
+    /**
+     * Stores JSON parameters used by the application.
+     */
     public static JsonNode parameters;
 
+    /**
+     * Clears the terminal screen based on the operating system.
+     * Note: This method may not work on all systems.
+     */
     public static void clearTerminal() {
         try {
             String os = System.getProperty("os.name").toLowerCase();
@@ -38,6 +65,11 @@ public class Main {
         }
     }
 
+    /**
+     * The main entry point of the client application.
+     *
+     * @param args Command-line arguments (not used in this application).
+     */
     public static void main(String[] args) {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
