@@ -70,7 +70,8 @@ public class Navigation {
     public double[] execute(EnvironmentState environmentState, double[] destiny) {
         double[] command = new double[2];
         // Calculate control commands here
-        command[0] = 40;
+        
+        command[0] = -40;
         command[1] = 40;
         // Apply control commands as needed
         return command;

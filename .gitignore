@@ -43,3 +43,4 @@ build/
 
 # Dependency lock files
 dependency-reduced-pom.xml
+src/main/resources/parameters.json

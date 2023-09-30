@@ -1,8 +1,10 @@
 package Client;
 
 import java.util.ArrayList;
-
+import Agent.DQN;
 import Protobuf.Command;
+import Protobuf.Robot;
+import ai.djl.ndarray.NDManager;
 
 /**
  * The AI class represents the main Artificial Intelligence module for
@@ -15,7 +17,7 @@ public class AI {
     private Navigation navigation;
     private EnvironmentState environmentState;
     private SharedObject<double[][]> blueVelocity, yellowVelocity;
-    private SharedObject<double[][]> blueDestiny, yellowDestiny;
+    private SharedObject<double[][]> blueDestiny;
 
     /**
      * Initializes a new instance of the AI class. It sets up the necessary
@@ -28,7 +30,6 @@ public class AI {
         blueVelocity = new SharedObject<double[][]>(new double[3][2]);
         yellowVelocity = new SharedObject<double[][]>(new double[3][2]);
         blueDestiny = new SharedObject<double[][]>(new double[3][3]);
-        yellowDestiny = new SharedObject<double[][]>(new double[3][3]);
     }
 
     /**
@@ -43,7 +44,6 @@ public class AI {
             }
             blueVelocity[0] = navigation.execute(environmentState, blueDestiny.Get()[0]);
             this.blueVelocity.Set(blueVelocity);
-            // yellowVelocity.Set(command[1]);
         }
     }
 
@@ -92,8 +92,8 @@ public class AI {
         while (true) {
             try {
                 Thread.sleep(80);
-                // Main.clearTerminal();
-                // environmentState.printState();
+                Main.clearTerminal();
+                environmentState.printState();
             } catch (Exception ex) {
 
             }
@@ -105,8 +105,12 @@ public class AI {
      * destination based on the received environment state.
      */
     private void startAI() {
-        double[][] blueDestiny = new double[3][3];
+        DQN dqn = new DQN(5, 4, 64, 32, 32, 0.99f, 0.001f);
+        System.out.println("YABA");
+        double[][] blueVelocity = new double[3][2];
+        //double[][] blueDestiny = new double[3][3];
         while (true) {
+            System.out.println("OOOOOOOOOOOOIII");
             try {
                 Thread.sleep(80);
             } catch (Exception e) {
@@ -115,10 +119,28 @@ public class AI {
                 if (communication.rx.Get()) {
                     environmentState.updateState(communication.environment.Get());
                 }
-                blueDestiny[0][0] = -100;
-                blueDestiny[0][1] = 0;
-                blueDestiny[0][2] = 90;
-                this.blueDestiny.Set(blueDestiny);
+                EnvironmentState.Robot robot = environmentState.blueRobots[0];
+                EnvironmentState.Ball ball = environmentState.ball;
+                float[] state = {
+                    robot.x.Get().floatValue(),
+                    robot.y.Get().floatValue(),
+                    robot.angle.Get().floatValue(),
+                    ball.x.Get().floatValue(),
+                    ball.y.Get().floatValue()
+                };
+                int action = dqn.react(state);
+                this.blueVelocity.Get();
+                if(action == 0){
+                    blueVelocity[0][0] += 0.1;
+                } else if(action == 1){
+                    blueVelocity[0][0] -= 0.1;
+                } else if(action == 2){
+                    blueVelocity[0][1] += 0.1;
+                } else if(action == 3){
+                    blueVelocity[0][1] -= 0.1;
+                }
+                this.blueVelocity.Set(blueVelocity);
+                dqn.collect(0, false);
             } catch (Exception ex) {
                 System.out.println(ex);
             }
@@ -135,25 +157,20 @@ public class AI {
                 new Thread(communication::startReceiving),
                 new Thread(communication::startSending),
                 new Thread(this::startAI),
-                new Thread(this::printEnvironmentState),
-                new Thread(this::executeNavigation),
+                // new Thread(this::printEnvironmentState),
+                // new Thread(this::executeNavigation),
                 new Thread(this::executeCommand),
         };
-        for (Thread thread : threads) {
-            thread.start();
-        }
+        for (Thread thread : threads) thread.start();
         try {
             Thread.sleep(Long.MAX_VALUE);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        for (Thread thread : threads) {
-            thread.interrupt();
-        }
+
+        for (Thread thread : threads) thread.interrupt();
         try {
-            for (Thread thread : threads) {
-                thread.join();
-            }
+            for (Thread thread : threads) thread.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

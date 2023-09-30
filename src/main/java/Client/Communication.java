@@ -160,7 +160,6 @@ public class Communication {
      * updated frame information.
      */
     private void printReceivedFrame() {
-
         while (true) {
             try {
                 Thread.sleep(80);
@@ -168,43 +167,43 @@ public class Communication {
             }
             Environment env = environment.Get();
             if (rx.Get() && env != null) {
-                // System.out.println("rx");
-                // Main.clearTerminal();
-                // System.out.println("Field:");
-                // System.out.println(
-                // "Length: " + env.getField().getLength() +
-                // "; Width: " + env.getField().getWidth());
-                // System.out.println(
-                // "GoalDepth: " + env.getField().getGoalDepth() +
-                // "; GoalWidth: " + env.getField().getGoalWidth());
-                // System.out.println("Ball:");
-                // double vx = Main.round(env.getFrame().getBall().getVx(), 4),
-                // vy = Main.round(env.getFrame().getBall().getVx(), 4), vnorm = Math.sqrt(vx *
-                // vx + vy * vy);
-                // System.out.println(
-                // "x: " + Main.round(env.getFrame().getBall().getX(), 4) +
-                // "; y: " + Main.round(env.getFrame().getBall().getY(), 4) +
-                // "; vX: " + vx +
-                // "; vY: " + vy +
-                // "; |v|: " + vnorm);
-                // System.out.println("Blue Robots:");
-                // for (Protobuf.Robot robot : env.getFrame().getRobotsBlueList()) {
-                // System.out.println(
-                // "id: " + robot.getRobotId() +
-                // "; x: " + Main.round(robot.getX(), 4) +
-                // "; y: " + Main.round(robot.getY(), 4) +
-                // "; vx: " + Main.round(robot.getVx(), 4) +
-                // "; vy: " + Main.round(robot.getVy(), 4));
-                // }
-                // System.out.println("Yellow Robots:");
-                // for (Protobuf.Robot robot : env.getFrame().getRobotsYellowList()) {
-                // System.out.println(
-                // "id: " + robot.getRobotId() +
-                // "; x: " + Main.round(robot.getX(), 4) +
-                // "; y: " + Main.round(robot.getY(), 4) +
-                // "; vx: " + Main.round(robot.getVx(), 4) +
-                // "; vy: " + Main.round(robot.getVy(), 4));
-                // }
+                System.out.println("rx");
+                Main.clearTerminal();
+                System.out.println("Field:");
+                System.out.println(
+                "Length: " + env.getField().getLength() +
+                "; Width: " + env.getField().getWidth());
+                System.out.println(
+                "GoalDepth: " + env.getField().getGoalDepth() +
+                "; GoalWidth: " + env.getField().getGoalWidth());
+                System.out.println("Ball:");
+                double vx = Main.round(env.getFrame().getBall().getVx(), 4),
+                vy = Main.round(env.getFrame().getBall().getVx(), 4), vnorm = Math.sqrt(vx *
+                vx + vy * vy);
+                System.out.println(
+                "x: " + Main.round(env.getFrame().getBall().getX(), 4) +
+                "; y: " + Main.round(env.getFrame().getBall().getY(), 4) +
+                "; vX: " + vx +
+                "; vY: " + vy +
+                "; |v|: " + vnorm);
+                System.out.println("Blue Robots:");
+                for (Protobuf.Robot robot : env.getFrame().getRobotsBlueList()) {
+                    System.out.println(
+                    "id: " + robot.getRobotId() +
+                    "; x: " + Main.round(robot.getX(), 4) +
+                    "; y: " + Main.round(robot.getY(), 4) +
+                    "; vx: " + Main.round(robot.getVx(), 4) +
+                    "; vy: " + Main.round(robot.getVy(), 4));
+                }
+                System.out.println("Yellow Robots:");
+                for (Protobuf.Robot robot : env.getFrame().getRobotsYellowList()) {
+                    System.out.println(
+                    "id: " + robot.getRobotId() +
+                    "; x: " + Main.round(robot.getX(), 4) +
+                    "; y: " + Main.round(robot.getY(), 4) +
+                    "; vx: " + Main.round(robot.getVx(), 4) +
+                    "; vy: " + Main.round(robot.getVy(), 4));
+                }
             }
         }
     }
@@ -312,13 +311,12 @@ public class Communication {
      * frames.
      */
     public void startReceiving() {
-        Thread receiverThread = new Thread(this::receiveFrame);
-        Thread decoderThread = new Thread(this::decodeMessage);
-        Thread printerThread = new Thread(this::printReceivedFrame);
-
-        receiverThread.start();
-        decoderThread.start();
-        printerThread.start();
+        Thread[] threads = {
+            new Thread(this::receiveFrame),
+            new Thread(this::decodeMessage),
+            // new Thread(this::printReceivedFrame),
+        };
+        for (Thread thread : threads) thread.start();
 
         try {
             Thread.sleep(Long.MAX_VALUE);
@@ -326,14 +324,9 @@ public class Communication {
             e.printStackTrace();
         }
 
-        // Interrupt and join the threads
-        receiverThread.interrupt();
-        decoderThread.interrupt();
-        printerThread.interrupt();
+        for (Thread thread : threads) thread.interrupt();
         try {
-            receiverThread.join();
-            decoderThread.join();
-            printerThread.join();
+            for (Thread thread : threads) thread.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
