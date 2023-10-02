@@ -16,7 +16,7 @@ public final class Memory {
     private int action;
     private float reward;
     private boolean mask;
-    private int stage;
+    // private int stage;
     private int head;
     private int size;
 
@@ -33,7 +33,7 @@ public final class Memory {
     }
 
     public void setState(float[] state) {
-        assertStage(0);
+        // assertStage(0);
         if (state_prev != null) {
             add(new Transition(state_prev, state, action, reward, mask));
         }
@@ -42,12 +42,12 @@ public final class Memory {
     }
 
     public void setAction(int action) {
-        assertStage(1);
+        // assertStage(1);
         this.action = action;
     }
 
     public void setRewardAndMask(float reward, boolean mask) {
-        assertStage(2);
+        // assertStage(2);
         this.reward = reward;
         this.mask = mask;
 
@@ -92,7 +92,7 @@ public final class Memory {
         action = -1;
         reward = 0.0F;
         mask = false;
-        stage = 0;
+        // stage = 0;
         head = -1;
         size = 0;
     }
@@ -114,31 +114,30 @@ public final class Memory {
         }
     }
 
-    private void assertStage(int i) {
-        System.out.println(i + " " + stage);
-        if (i != stage) {
-            String info_name;
-            switch (stage) {
-            case 0:
-                info_name = "State";
-                break;
-            case 1:
-                info_name = "Action";
-                break;
-            case 2:
-                info_name = "Reward and Mask";
-                break;
-            default:
-                info_name = null;
-            }
-            throw new IllegalStateException("Expected information: " + info_name);
-        } else {
-            stage++;
-            if (stage > 2) {
-                stage = 0;
-            }
-        }
-    }
+    // private void assertStage(int i) {
+    // if (i != stage) {
+    // String info_name;
+    // switch (stage) {
+    // case 0:
+    // info_name = "State";
+    // break;
+    // case 1:
+    // info_name = "Action";
+    // break;
+    // case 2:
+    // info_name = "Reward and Mask";
+    // break;
+    // default:
+    // info_name = null;
+    // }
+    // throw new IllegalStateException("Expected information: " + info_name);
+    // } else {
+    // stage++;
+    // if (stage > 2) {
+    // stage = 0;
+    // }
+    // }
+    // }
 
     private MemoryBatch getBatch(Transition[] transitions, NDManager manager, int batch_size) {
 

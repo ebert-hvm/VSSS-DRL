@@ -32,6 +32,8 @@ public class Communication {
     public SharedObject<byte[]> packet;
     public SharedObject<Integer> packetLength;
     public SharedObject<Boolean> replace;
+    public SharedObject<Double[]> robotReplacePos;
+    public SharedObject<Double[]> ballReplacePos;
 
     /**
      * Initializes the Communication class with shared objects for communication
@@ -46,6 +48,8 @@ public class Communication {
         packet = new SharedObject<>(new byte[2048]);
         packetLength = new SharedObject<>(0);
         replace = new SharedObject<>(false);
+        robotReplacePos = new SharedObject<>(new Double[3]);
+        ballReplacePos = new SharedObject<>(new Double[2]);
     }
 
     /**
@@ -171,38 +175,38 @@ public class Communication {
                 Main.clearTerminal();
                 System.out.println("Field:");
                 System.out.println(
-                "Length: " + env.getField().getLength() +
-                "; Width: " + env.getField().getWidth());
+                        "Length: " + env.getField().getLength() +
+                                "; Width: " + env.getField().getWidth());
                 System.out.println(
-                "GoalDepth: " + env.getField().getGoalDepth() +
-                "; GoalWidth: " + env.getField().getGoalWidth());
+                        "GoalDepth: " + env.getField().getGoalDepth() +
+                                "; GoalWidth: " + env.getField().getGoalWidth());
                 System.out.println("Ball:");
                 double vx = Main.round(env.getFrame().getBall().getVx(), 4),
-                vy = Main.round(env.getFrame().getBall().getVx(), 4), vnorm = Math.sqrt(vx *
-                vx + vy * vy);
+                        vy = Main.round(env.getFrame().getBall().getVx(), 4), vnorm = Math.sqrt(vx *
+                                vx + vy * vy);
                 System.out.println(
-                "x: " + Main.round(env.getFrame().getBall().getX(), 4) +
-                "; y: " + Main.round(env.getFrame().getBall().getY(), 4) +
-                "; vX: " + vx +
-                "; vY: " + vy +
-                "; |v|: " + vnorm);
+                        "x: " + Main.round(env.getFrame().getBall().getX(), 4) +
+                                "; y: " + Main.round(env.getFrame().getBall().getY(), 4) +
+                                "; vX: " + vx +
+                                "; vY: " + vy +
+                                "; |v|: " + vnorm);
                 System.out.println("Blue Robots:");
                 for (Protobuf.Robot robot : env.getFrame().getRobotsBlueList()) {
                     System.out.println(
-                    "id: " + robot.getRobotId() +
-                    "; x: " + Main.round(robot.getX(), 4) +
-                    "; y: " + Main.round(robot.getY(), 4) +
-                    "; vx: " + Main.round(robot.getVx(), 4) +
-                    "; vy: " + Main.round(robot.getVy(), 4));
+                            "id: " + robot.getRobotId() +
+                                    "; x: " + Main.round(robot.getX(), 4) +
+                                    "; y: " + Main.round(robot.getY(), 4) +
+                                    "; vx: " + Main.round(robot.getVx(), 4) +
+                                    "; vy: " + Main.round(robot.getVy(), 4));
                 }
                 System.out.println("Yellow Robots:");
                 for (Protobuf.Robot robot : env.getFrame().getRobotsYellowList()) {
                     System.out.println(
-                    "id: " + robot.getRobotId() +
-                    "; x: " + Main.round(robot.getX(), 4) +
-                    "; y: " + Main.round(robot.getY(), 4) +
-                    "; vx: " + Main.round(robot.getVx(), 4) +
-                    "; vy: " + Main.round(robot.getVy(), 4));
+                            "id: " + robot.getRobotId() +
+                                    "; x: " + Main.round(robot.getX(), 4) +
+                                    "; y: " + Main.round(robot.getY(), 4) +
+                                    "; vx: " + Main.round(robot.getVx(), 4) +
+                                    "; vy: " + Main.round(robot.getVy(), 4));
                 }
             }
         }
@@ -245,9 +249,11 @@ public class Communication {
      */
     private Replacement DefaultReplacement() {
         return Replacement.newBuilder()
-                .setBall(BallReplacement.newBuilder().setX(-0.375).setY(0).build())
+                .setBall(BallReplacement.newBuilder().setX(ballReplacePos.Get()[0]).setY(ballReplacePos.Get()[1])
+                        .build())
                 .addRobots(RobotReplacement.newBuilder()
-                        .setPosition(Robot.newBuilder().setX(-0.6).setY(0).setRobotId(0).setOrientation(0)
+                        .setPosition(Robot.newBuilder().setX(robotReplacePos.Get()[0]).setY(robotReplacePos.Get()[1])
+                                .setRobotId(0).setOrientation(robotReplacePos.Get()[2])
                                 .build())
                         .setYellowteam(false).setTurnon(true).build())
                 .addRobots(RobotReplacement.newBuilder()
@@ -260,7 +266,7 @@ public class Communication {
                         .setYellowteam(false).setTurnon(false).build())
                 .addRobots(RobotReplacement.newBuilder()
                         .setPosition(
-                                Robot.newBuilder().setX(0.7).setY(0).setRobotId(0).setOrientation(180).build())
+                                Robot.newBuilder().setX(1.5).setY(0).setRobotId(0).setOrientation(180).build())
                         .setYellowteam(true).setTurnon(true).build())
                 .addRobots(RobotReplacement.newBuilder()
                         .setPosition(Robot.newBuilder().setX(0.3).setY(0.9).setRobotId(1).setOrientation(-90)
@@ -312,11 +318,12 @@ public class Communication {
      */
     public void startReceiving() {
         Thread[] threads = {
-            new Thread(this::receiveFrame),
-            new Thread(this::decodeMessage),
-            // new Thread(this::printReceivedFrame),
+                new Thread(this::receiveFrame),
+                new Thread(this::decodeMessage),
+                // new Thread(this::printReceivedFrame),
         };
-        for (Thread thread : threads) thread.start();
+        for (Thread thread : threads)
+            thread.start();
 
         try {
             Thread.sleep(Long.MAX_VALUE);
@@ -324,9 +331,11 @@ public class Communication {
             e.printStackTrace();
         }
 
-        for (Thread thread : threads) thread.interrupt();
+        for (Thread thread : threads)
+            thread.interrupt();
         try {
-            for (Thread thread : threads) thread.join();
+            for (Thread thread : threads)
+                thread.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

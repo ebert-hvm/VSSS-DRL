@@ -61,12 +61,18 @@ public class EnvironmentState {
          *
          * @param ball The Protobuf ball data.
          */
-        public void Set(Protobuf.Ball ball) {
+        public void Set(Protobuf.Ball ball, double fieldLenght) {
             if (ball == null) {
                 System.out.println("ball is null");
                 return;
             }
-            x.Set(1000 * ball.getX());
+            double xBall = ball.getX();
+            if (xBall > fieldLenght / 2) {
+                goalsBlue.Set(goalsBlue.Get() + 1);
+            } else if (xBall < -fieldLenght / 2) {
+                goalsYellow.Set(goalsYellow.Get() + 1);
+            }
+            x.Set(1000 * xBall);
             y.Set(1000 * ball.getY());
             vX.Set(ball.getVx());
             vY.Set(ball.getVy());
@@ -116,6 +122,8 @@ public class EnvironmentState {
     public Field field;
     public Ball ball;
     public Robot[] blueRobots, yellowRobots;
+    public Environment lastEnv;
+    public SharedObject<Integer> goalsBlue, goalsYellow;
 
     /**
      * Initializes a new instance of the EnvironmentState class with field, ball,
@@ -130,6 +138,9 @@ public class EnvironmentState {
             blueRobots[i] = new Robot();
             yellowRobots[i] = new Robot();
         }
+        goalsBlue = new SharedObject<>(0);
+        goalsYellow = new SharedObject<>(0);
+        lastEnv = null;
     }
 
     /**
@@ -150,12 +161,13 @@ public class EnvironmentState {
      * @param env The Protobuf environment data.
      */
     public void updateState(Environment env) {
+        lastEnv = env;
         if (env == null) {
             System.out.println("env is null");
             return;
         }
         field.Set(env.getField());
-        ball.Set(env.getFrame().getBall());
+        ball.Set(env.getFrame().getBall(), env.getField().getLength());
         for (int i = 0; i < 3; i++) {
             try {
                 blueRobots[i].Set(env.getFrame().getRobotsBlue(i));

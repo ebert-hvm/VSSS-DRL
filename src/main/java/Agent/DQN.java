@@ -25,18 +25,21 @@ public class DQN extends BaseDQN {
 
     @Override
     protected void updateModel(NDManager manager) throws TranslateException {
-        MemoryBatch batch = memory.sampleBatch(batch_size, manager);
+        try {
+            MemoryBatch batch = memory.sampleBatch(batch_size, manager);
 
-        NDArray policy = policy_predictor.predict(new NDList(batch.getStates())).singletonOrThrow();
-        NDArray target = target_predictor.predict(new NDList(batch.getNextStates())).singletonOrThrow().duplicate();
-        NDArray expected_returns = Helper.gather(policy, batch.getActions().toIntArray());
-        NDArray next_returns = batch.getRewards()
-                .add(target.max(new int[] { 1 }).mul(batch.getMasks().logicalNot()).mul(gamma));
+            NDArray policy = policy_predictor.predict(new NDList(batch.getStates())).singletonOrThrow();
+            NDArray target = target_predictor.predict(new NDList(batch.getNextStates())).singletonOrThrow().duplicate();
+            NDArray expected_returns = Helper.gather(policy, batch.getActions().toIntArray());
+            NDArray next_returns = batch.getRewards()
+                    .add(target.max(new int[] { 1 }).mul(batch.getMasks().logicalNot()).mul(gamma));
 
-        NDArray loss = loss_func.evaluate(new NDList(expected_returns), new NDList(next_returns));
+            NDArray loss = loss_func.evaluate(new NDList(expected_returns), new NDList(next_returns));
 
-        gradientUpdate(loss);
-        System.out.println("boogens biggens");
+            gradientUpdate(loss);
+        } catch (Exception ex) {
+            System.out.println(ex);
+        }
     }
 
 }

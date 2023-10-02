@@ -7,6 +7,8 @@ import ai.djl.engine.Engine;
 import ai.djl.inference.Predictor;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
+import ai.djl.mxnet.engine.MxEngine;
+import ai.djl.mxnet.engine.MxGradientCollector;
 import ai.djl.ndarray.NDManager;
 import ai.djl.nn.Parameter;
 import ai.djl.training.GradientCollector;
@@ -15,6 +17,7 @@ import ai.djl.training.tracker.Tracker;
 import ai.djl.translate.NoopTranslator;
 import ai.djl.translate.TranslateException;
 import ai.djl.util.Pair;
+import ai.djl.util.PairList;
 import Agent.Model.ScoreModel;
 import Utils.Memory;
 
@@ -34,6 +37,7 @@ public abstract class BaseDQN extends BaseAgent {
     protected final int sync_net_interval;
     protected final float gamma;
 
+    // private GradientCollector collector;
     private Optimizer optimizer;
     private Model policy_net;
     private Model target_net;
@@ -54,7 +58,6 @@ public abstract class BaseDQN extends BaseAgent {
         this.sync_net_interval = sync_net_interval;
         this.gamma = gamma;
         this.learning_rate = learning_rate;
-
         reset();
     }
 
@@ -64,14 +67,12 @@ public abstract class BaseDQN extends BaseAgent {
         try (NDManager submanager = manager.newSubManager()) {
             if (!isEval()) {
                 memory.setState(state);
-                System.out.println("state");
                 if (memory.size() > batch_size) {
                     updateModel(submanager);
                 }
             }
 
             action = getAction(submanager, state);
-            System.out.println("action");
             if (!isEval()) {
                 memory.setAction(action);
             }
@@ -107,10 +108,10 @@ public abstract class BaseDQN extends BaseAgent {
 
     protected final void syncNets() {
         for (Pair<String, Parameter> params : policy_net.getBlock().getParameters()) {
-            try{
-                target_net.getBlock().getParameters().get(params.getKey()).setArray(params.getValue().getArray().duplicate());
-            }
-            catch(Exception ex){
+            try {
+                target_net.getBlock().getParameters().get(params.getKey())
+                        .setArray(params.getValue().getArray().duplicate());
+            } catch (Exception ex) {
 
             }
         }
@@ -119,15 +120,22 @@ public abstract class BaseDQN extends BaseAgent {
     }
 
     protected final void gradientUpdate(NDArray loss) {
-        try (GradientCollector collector = Engine.getInstance().newGradientCollector()) {
+        if (!MxGradientCollector.isRecording()) {
+            MxGradientCollector.setRecording(true);
+        }
+        try (GradientCollector collector = MxEngine.getInstance().newGradientCollector();) {
             collector.backward(loss);
             for (Pair<String, Parameter> params : policy_net.getBlock().getParameters()) {
                 NDArray params_arr = params.getValue().getArray();
-                optimizer.update(params.getKey(), params_arr, params_arr.getGradient());
-
+                if (params_arr.getGradient() != null) {
+                    optimizer.update(params.getKey(), params_arr, params_arr.getGradient());
+                }
             }
+            // MxGradientCollector.setRecording(false);
+            // collector.close();
+        } catch (Exception ex) {
+            // System.out.println(ex);
         }
-
         if (iteration++ % sync_net_interval == 0) {
             epsilon *= DECAY_EXPLORE_RATE;
             syncNets();
@@ -137,5 +145,4 @@ public abstract class BaseDQN extends BaseAgent {
     protected abstract int getAction(NDManager manager, float[] state) throws TranslateException;
 
     protected abstract void updateModel(NDManager manager) throws TranslateException;
-
 }
