@@ -7,6 +7,14 @@ from shared_object import SharedObject
 from communication import Communication
 from environment_state import EnvironmentState
 
+import torch
+import torch.optim as optim
+import matplotlib.pyplot as plt
+from functions import select_action, plot_durations, optimize_model
+from hyperparams import TAU, LR
+
+from classes import DQN, ReplayMemory
+
 class AI:
     def __init__(self):
         self.random = random.Random()
@@ -63,25 +71,41 @@ class AI:
             total_reward = 1
         elif self.environment_state.goals_yellow.get_value() > self.last_state.goals_yellow.get_value():
             total_reward = -1
-        return total_reward
+        return (total_reward + 1)/2
 
     def execute_ai(self):
         timer = 7
         time_val = time.time() - timer
-        #dqn = DQN(12, 3, 8, 32, 32, 0.99, 0.001)
+
+        env = 0
+        n_actions = 3
+        n_observations = 12
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        policy_net = DQN(n_observations, n_actions).to(device)
+        target_net = DQN(n_observations, n_actions).to(device)
+        target_net.load_state_dict(policy_net.state_dict())
+        optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
+        memory = ReplayMemory(10000)
+        steps_done = [0]
+        if torch.cuda.is_available():
+            num_episodes = 60
+        else:
+            num_episodes = 20
+        prev_state = torch.tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=torch.float32, device=device).unsqueeze(0)
+
         blue_velocity = [[0.0] * 2 for _ in range(3)]
         first = True
         try:
-            cnt=0
+            cnt = 0
             while True:
-                cnt = (cnt +1)%5
-                if not self.communication.rx.get_value():
-                    continue
+                cnt = (cnt + 1) % 5
+                if not self.communication.rx.get_value(): continue
                 
                 if self.environment_state.last_env is not None:
                     self.last_state.update_state(self.environment_state.last_env)
 
-                self.environment_state.update_state(self.communication.environment.get_value())
+                self.environment_state.update_state(
+                    self.communication.environment.get_value())
                 replace = self.communication.replace.get_value()
                 if replace and time.time() - time_val > 0.5:
                     self.communication.replace.set_value(False)
@@ -100,8 +124,8 @@ class AI:
                     ball_replace = [x2, 0.0, 0.0]
 
                     if not first:
-                        #reward = self.reward()
-                        #dqn.collect(reward, False)
+                        # reward = self.reward()
+                        # dqn.collect(reward, False)
                         pass
                     else:
                         first = False
@@ -124,43 +148,58 @@ class AI:
                     float(self.environment_state.goals_blue.get_value()),
                     float(self.environment_state.goals_yellow.get_value())
                 ]
+                state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
 
-                #action = dqn.react(state)
+                # action = dqn.react(state)
+                action = select_action(state, steps_done, env, device, policy_net)
+                reward = torch.tensor([self.reward()], device=device)
+                print(action.item())
+                print(reward.item())
+
+                memory.push(state, action, prev_state, reward)
+                optimize_model(device, memory, optimizer, policy_net, target_net)
+                target_net_state_dict = target_net.state_dict()
+                policy_net_state_dict = policy_net.state_dict()
+                for key in policy_net_state_dict:
+                    target_net_state_dict[key] = policy_net_state_dict[key] * TAU + target_net_state_dict[key]*(1-TAU)
+                target_net.load_state_dict(target_net_state_dict)
+
                 blue_velocity = self.blue_velocity.get_value()
-                action = cnt
+                # action = cnt
                 try:
-                    if action == 0:
+                    if action.item() == 0:
                         # FORWARD
                         blue_velocity[0][0] = 15
                         blue_velocity[0][1] = 15
-                        time.sleep(0.2)
-                    elif action == 1:
+                    elif action.item() == 1:
                         # BACKWARD
                         blue_velocity[0][0] = -15
                         blue_velocity[0][1] = -15
-                        time.sleep(0.2)
-                    elif action == 2:
+                    elif action.item() == 2:
                         # STOP
                         blue_velocity[0][0] = 0
                         blue_velocity[0][1] = 0
-                        time.sleep(0.1)
-                    elif action == 3:
+                    elif action.item() == 3:
                         # TURN LEFT
-                        blue_velocity[0][0] = max(blue_velocity[0][0] + self.acceleration, -20)
-                        blue_velocity[0][1] = max(blue_velocity[0][0] - self.acceleration, -20)
-                        time.sleep(0.1)
-                    elif action == 4:
+                        blue_velocity[0][0] = max(
+                            blue_velocity[0][0] + self.acceleration, -20)
+                        blue_velocity[0][1] = max(
+                            blue_velocity[0][0] - self.acceleration, -20)
+                    elif action.item() == 4:
                         # TURN RIGHT
-                        blue_velocity[0][0] = max(blue_velocity[0][0] - self.acceleration, -20)
-                        blue_velocity[0][1] = max(blue_velocity[0][0] + self.acceleration, -20)
-                        time.sleep(0.1)
+                        blue_velocity[0][0] = max(
+                            blue_velocity[0][0] - self.acceleration, -20)
+                        blue_velocity[0][1] = max(
+                            blue_velocity[0][0] + self.acceleration, -20)
                 except Exception as ex:
                     print(ex)
                     traceback.print_exc()
                 self.blue_velocity.set_value(blue_velocity)
+                prev_state = state
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+
     def start(self):
         threads = [
             threading.Thread(target=self.communication.start_receiving),

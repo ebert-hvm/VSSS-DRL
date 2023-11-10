@@ -25,7 +25,7 @@ def select_action(state, steps_done, env, device, policy_net):
             # found, so we pick action with the larger expected reward.
             return policy_net(state).max(1)[1].view(1, 1)
     else:
-        return torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long)
+        return torch.tensor([[1]], device=device, dtype=torch.long)
 
 
 def plot_durations(episode_durations, show_result=False):

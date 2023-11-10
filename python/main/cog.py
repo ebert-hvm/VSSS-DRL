@@ -32,7 +32,7 @@ else:
     num_episodes = 50
 
 for i_episode in range(num_episodes):
-    # Initialize the environment and get it's state
+    # Initialize the environment and get its state
     state, info = env.reset()
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
     for t in count():
@@ -44,9 +44,7 @@ for i_episode in range(num_episodes):
         if terminated:
             next_state = None
         else:
-            next_state = torch.tensor(
-                observation, dtype=torch.float32, device=device).unsqueeze(0)
-
+            next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
         memory.push(state, action, next_state, reward)
         state = next_state
         # Perform one step of the optimization (on the policy network)

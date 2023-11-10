@@ -1,8 +1,9 @@
 from shared_object import SharedObject
 from FiraSim_message_pb2 import Environment
 import traceback
+import gymnasium as gym
 
-class EnvironmentState:
+class EnvironmentState(gym.Env):
     class Field:
         def __init__(self):
             self.length = SharedObject(0.0)
@@ -97,3 +98,9 @@ class EnvironmentState:
             except Exception as ex:
                 traceback.print_exc()
                 pass
+
+    def step(self, action):
+        print("cock")
+
+    def reset():
+        print("ball")
